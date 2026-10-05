@@ -744,6 +744,17 @@ package androidx.compose.runtime {
     method public static suspend <R> Object? withRunningRecomposer(kotlin.jvm.functions.Function3<? super kotlinx.coroutines.CoroutineScope,? super androidx.compose.runtime.Recomposer,? super kotlin.coroutines.Continuation<? super R>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super R>);
   }
 
+  public final class RecompositionFramePolicy extends kotlin.coroutines.AbstractCoroutineContextElement {
+    field public static final androidx.compose.runtime.RecompositionFramePolicy.Key Key;
+  }
+
+  public static final class RecompositionFramePolicy.Key implements kotlin.coroutines.CoroutineContext.Key<androidx.compose.runtime.RecompositionFramePolicy> {
+    method @InaccessibleFromKotlin public androidx.compose.runtime.RecompositionFramePolicy getEventCompletion();
+    method @InaccessibleFromKotlin public androidx.compose.runtime.RecompositionFramePolicy getFrameAligned();
+    property public androidx.compose.runtime.RecompositionFramePolicy EventCompletion;
+    property public androidx.compose.runtime.RecompositionFramePolicy FrameAligned;
+  }
+
   public interface RememberObserver {
     method public void onAbandoned();
     method public void onForgotten();
