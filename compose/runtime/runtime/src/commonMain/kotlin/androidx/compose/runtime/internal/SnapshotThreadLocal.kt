@@ -19,6 +19,17 @@ package androidx.compose.runtime.internal
 import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
 
+/** Thread-local snapshot context; values must be restored in a finally block. */
+internal expect class SnapshotThreadLocal<T>() {
+    fun get(): T?
+
+    fun set(value: T?)
+
+    fun setIfEmpty(value: T?): Boolean
+
+    fun replace(value: T?): T?
+}
+
 /**
  * This is similar to a
  * [java.lang.ThreadLocal](https://developer.android.com/reference/java/lang/ThreadLocal) but has
@@ -30,7 +41,7 @@ import androidx.compose.runtime.platform.synchronized
  * [kotlin.native.concurrent.ThreadLocal] can be used to implement the actual for platforms that do
  * not exhibit the same overhead for thread locals as the JVM and ART.
  */
-internal class SnapshotThreadLocal<T> {
+internal class SnapshotThreadLocalImpl<T> {
     private val map = AtomicReference(emptyThreadMap)
     private val writeMutex = makeSynchronizedObject()
 

@@ -957,8 +957,18 @@ internal constructor(
 
     override fun dispose() {
         if (!disposed) {
-            super.dispose()
-            nestedDeactivated(this)
+            if (modified == null) {
+                // Empty snapshots only have lifecycle bookkeeping to release. Keep this in
+                // one critical section instead of contending separately for each operation.
+                sync {
+                    super.dispose()
+                    nestedDeactivated(this)
+                }
+            } else {
+                // Invalidating modified records can be expensive. Keep it outside the lock.
+                super.dispose()
+                nestedDeactivated(this)
+            }
             dispatchObserverOnPreDispose(this)
         }
     }
@@ -2189,7 +2199,13 @@ private fun <T> advanceGlobalSnapshot(block: (invalid: SnapshotIdSet) -> T): T {
         if (modified != null) {
             pendingApplyObserverCount.add(1)
         }
-        resetGlobalSnapshotLocked(globalSnapshot, block)
+        val result = resetGlobalSnapshotLocked(globalSnapshot, block)
+        if (modified == null) {
+            // There are no observers to dispatch outside the lock. Reclaim records here
+            // instead of releasing and immediately reacquiring the global lock.
+            checkAndOverwriteUnusedRecordsLocked()
+        }
+        result
     }
 
     // If the previous global snapshot had any modified states then notify the registered apply
@@ -2206,9 +2222,11 @@ private fun <T> advanceGlobalSnapshot(block: (invalid: SnapshotIdSet) -> T): T {
         }
     }
 
-    sync {
-        checkAndOverwriteUnusedRecordsLocked()
-        modified?.forEach { processForUnusedRecordsLocked(it) }
+    if (modified != null) {
+        sync {
+            checkAndOverwriteUnusedRecordsLocked()
+            modified.forEach { processForUnusedRecordsLocked(it) }
+        }
     }
 
     return result
