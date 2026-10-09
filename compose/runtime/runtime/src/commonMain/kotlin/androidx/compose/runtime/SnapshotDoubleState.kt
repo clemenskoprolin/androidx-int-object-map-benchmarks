@@ -45,6 +45,10 @@ import kotlin.reflect.KProperty
  * values are stored in memory as the primitive `double` type, avoiding the autoboxing that occurs
  * when using `MutableState<Double>`.
  *
+ * Inside [withNonSnapshotState] or [withSinglePassSnapshotMode], creates a local, unobserved holder
+ * confined to that scope and its creating thread. Local holders do not participate in snapshot
+ * transactions or schedule recomposition.
+ *
  * @param value the initial value for the [MutableDoubleState]
  * @see DoubleState
  * @see MutableDoubleState
@@ -55,7 +59,8 @@ import kotlin.reflect.KProperty
  */
 @StateFactoryMarker
 public fun mutableDoubleStateOf(value: Double): MutableDoubleState =
-    createSnapshotMutableDoubleState(value)
+    currentNonSnapshotStateScope()?.let { NonSnapshotMutableDoubleState(value, it) }
+        ?: createSnapshotMutableDoubleState(value)
 
 /**
  * A value holder where reads to the [doubleValue] property during the execution of a [Composable]

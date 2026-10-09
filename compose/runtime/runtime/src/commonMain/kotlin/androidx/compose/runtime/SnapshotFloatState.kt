@@ -45,6 +45,10 @@ import kotlin.reflect.KProperty
  * values are stored in memory as the primitive `float` type, avoiding the autoboxing that occurs
  * when using `MutableState<Float>`.
  *
+ * Inside [withNonSnapshotState] or [withSinglePassSnapshotMode], creates a local, unobserved holder
+ * confined to that scope and its creating thread. Local holders do not participate in snapshot
+ * transactions or schedule recomposition.
+ *
  * @param value the initial value for the [MutableFloatState]
  * @see FloatState
  * @see MutableFloatState
@@ -55,7 +59,8 @@ import kotlin.reflect.KProperty
  */
 @StateFactoryMarker
 public fun mutableFloatStateOf(value: Float): MutableFloatState =
-    createSnapshotMutableFloatState(value)
+    currentNonSnapshotStateScope()?.let { NonSnapshotMutableFloatState(value, it) }
+        ?: createSnapshotMutableFloatState(value)
 
 /**
  * A value holder where reads to the [floatValue] property during the execution of a [Composable]

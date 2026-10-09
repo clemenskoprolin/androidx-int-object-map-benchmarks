@@ -45,6 +45,10 @@ import kotlin.reflect.KProperty
  * values are stored in memory as the primitive `long` type, avoiding the autoboxing that occurs
  * when using `MutableState<Long>`.
  *
+ * Inside [withNonSnapshotState] or [withSinglePassSnapshotMode], creates a local, unobserved holder
+ * confined to that scope and its creating thread. Local holders do not participate in snapshot
+ * transactions or schedule recomposition.
+ *
  * @param value the initial value for the [MutableLongState]
  * @see LongState
  * @see MutableLongState
@@ -54,7 +58,9 @@ import kotlin.reflect.KProperty
  * @see mutableDoubleStateOf
  */
 @StateFactoryMarker
-public fun mutableLongStateOf(value: Long): MutableLongState = createSnapshotMutableLongState(value)
+public fun mutableLongStateOf(value: Long): MutableLongState =
+    currentNonSnapshotStateScope()?.let { NonSnapshotMutableLongState(value, it) }
+        ?: createSnapshotMutableLongState(value)
 
 /**
  * A value holder where reads to the [longValue] property during the execution of a [Composable]

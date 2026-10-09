@@ -22,8 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisallowComposableCalls
 import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.runtime.NonSnapshotStateScope
 import androidx.compose.runtime.checkPrecondition
 import androidx.compose.runtime.collection.wrapIntoSet
+import androidx.compose.runtime.currentNonSnapshotStateScope
 import androidx.compose.runtime.internal.AtomicInt
 import androidx.compose.runtime.internal.JvmDefaultWithCompatibility
 import androidx.compose.runtime.internal.SnapshotThreadLocal
@@ -391,6 +393,11 @@ public sealed class Snapshot(
          * the snapshot and the changes calculated during composition are disposed and a new
          * composition is scheduled to be calculated again.
          *
+         * Inside [androidx.compose.runtime.withSinglePassSnapshotMode], returns a lightweight
+         * observer context that reads and writes the caller's snapshot. This context provides no
+         * isolation or rollback, and [MutableSnapshot.apply] throws. A global caller's reads may
+         * change during the scope. Local scalar holders created in the scope are unobserved.
+         *
          * @param readObserver called when any state object is read in the lambda passed to
          *   [Snapshot.enter] or in the [Snapshot.enter] of any nested snapshots.
          *
@@ -413,11 +420,20 @@ public sealed class Snapshot(
         public fun takeMutableSnapshot(
             readObserver: ((Any) -> Unit)? = null,
             writeObserver: ((Any) -> Unit)? = null,
-        ): MutableSnapshot =
-            (currentSnapshot() as? MutableSnapshot)?.takeNestedMutableSnapshot(
-                readObserver,
-                writeObserver,
-            ) ?: error("Cannot create a mutable snapshot of a read-only snapshot")
+        ): MutableSnapshot {
+            val parent =
+                currentSnapshot() as? MutableSnapshot
+                    ?: error("Cannot create a mutable snapshot of a read-only snapshot")
+            if (currentNonSnapshotStateScope()?.bypassMutableSnapshots == true) {
+                return SinglePassMutableSnapshot(
+                    parent.takeUnless { it is GlobalSnapshot },
+                    currentNonSnapshotStateScope()!!,
+                    readObserver,
+                    writeObserver,
+                )
+            }
+            return parent.takeNestedMutableSnapshot(readObserver, writeObserver)
+        }
 
         /**
          * Escape the current snapshot, if there is one. All state objects will have the value
@@ -1804,8 +1820,59 @@ internal class NestedMutableSnapshot(
     }
 }
 
+/** A disposable observer context for the experimental one-pass rendering mode. */
+internal class SinglePassMutableSnapshot(
+    private val parent: MutableSnapshot?,
+    private val owner: NonSnapshotStateScope,
+    readObserver: ((Any) -> Unit)?,
+    writeObserver: ((Any) -> Unit)?,
+) :
+    TransparentObserverMutableSnapshot(
+        parentSnapshot = parent,
+        specifiedReadObserver = readObserver,
+        specifiedWriteObserver = writeObserver,
+        mergeParentObservers = true,
+        ownsParentSnapshot = false,
+    ) {
+    private fun validateScope() {
+        owner.validateAccess()
+        validateNotDisposed()
+        if (parent is SinglePassMutableSnapshot) parent.validateScope()
+        else parent?.validateNotDisposed()
+    }
+
+    @PublishedApi
+    internal override fun makeCurrent(): Snapshot? {
+        validateScope()
+        return super.makeCurrent()
+    }
+
+    override fun takeNestedSnapshot(readObserver: ((Any) -> Unit)?): Snapshot {
+        validateScope()
+        return super.takeNestedSnapshot(readObserver)
+    }
+
+    override fun apply(): SnapshotApplyResult =
+        error("Snapshots in one-pass mode are not transactions and cannot be applied")
+
+    override fun dispose() {
+        // Do not return this subtype to the transparent observer cache.
+        disposed = true
+        readObserver = null
+        writeObserver = null
+    }
+
+    override fun takeNestedMutableSnapshot(
+        readObserver: ((Any) -> Unit)?,
+        writeObserver: ((Any) -> Unit)?,
+    ): MutableSnapshot {
+        validateScope()
+        return SinglePassMutableSnapshot(this, owner, readObserver, writeObserver)
+    }
+}
+
 /** A pseudo snapshot that doesn't introduce isolation but does introduce observers. */
-internal class TransparentObserverMutableSnapshot(
+internal open class TransparentObserverMutableSnapshot(
     private var parentSnapshot: MutableSnapshot?,
     specifiedReadObserver: ((Any) -> Unit)?,
     specifiedWriteObserver: ((Any) -> Unit)?,

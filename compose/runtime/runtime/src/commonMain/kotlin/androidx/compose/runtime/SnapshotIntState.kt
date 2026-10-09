@@ -45,6 +45,10 @@ import kotlin.reflect.KProperty
  * values are stored in memory as the primitive `int` type, avoiding the autoboxing that occurs when
  * using `MutableState<Int>`.
  *
+ * Inside [withNonSnapshotState] or [withSinglePassSnapshotMode], creates a local, unobserved holder
+ * confined to that scope and its creating thread. Local holders do not participate in snapshot
+ * transactions or schedule recomposition.
+ *
  * @param value the initial value for the [MutableIntState]
  * @see IntState
  * @see MutableIntState
@@ -54,7 +58,9 @@ import kotlin.reflect.KProperty
  * @see mutableDoubleStateOf
  */
 @StateFactoryMarker
-public fun mutableIntStateOf(value: Int): MutableIntState = createSnapshotMutableIntState(value)
+public fun mutableIntStateOf(value: Int): MutableIntState =
+    currentNonSnapshotStateScope()?.let { NonSnapshotMutableIntState(value, it) }
+        ?: createSnapshotMutableIntState(value)
 
 /**
  * A value holder where reads to the [intValue] property during the execution of a [Composable]

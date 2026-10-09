@@ -44,6 +44,10 @@ import kotlin.reflect.KProperty
  * The MutableState class is a single value holder whose reads and writes are observed by Compose.
  * Additionally, writes to it are transacted as part of the [Snapshot] system.
  *
+ * Inside [withNonSnapshotState] or [withSinglePassSnapshotMode], creates a local, unobserved holder
+ * confined to that scope and its creating thread. Local holders do not participate in snapshot
+ * transactions or schedule recomposition.
+ *
  * @param value the initial value for the [MutableState]
  * @param policy a policy to controls how changes are handled in mutable snapshots.
  * @sample androidx.compose.runtime.samples.SimpleStateSample
@@ -62,7 +66,9 @@ import kotlin.reflect.KProperty
 public fun <T> mutableStateOf(
     value: T,
     policy: SnapshotMutationPolicy<T> = structuralEqualityPolicy(),
-): MutableState<T> = createSnapshotMutableState(value, policy)
+): MutableState<T> =
+    currentNonSnapshotStateScope()?.let { NonSnapshotMutableState(value, policy, it) }
+        ?: createSnapshotMutableState(value, policy)
 
 /**
  * A value holder where reads to the [value] property during the execution of a [Composable]

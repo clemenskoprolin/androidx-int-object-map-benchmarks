@@ -612,6 +612,11 @@ package androidx.compose.runtime {
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER}) public @interface NonSkippableComposable {
   }
 
+  @SuppressCompatibility public final class NonSnapshotStateKt {
+    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public static <R> R withNonSnapshotState(kotlin.jvm.functions.Function0<? extends R> block);
+    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public static <R> R withSinglePassSnapshotMode(kotlin.jvm.functions.Function0<? extends R> block);
+  }
+
   public sealed nonexhaustive interface PausableComposition extends androidx.compose.runtime.ReusableComposition {
     method public androidx.compose.runtime.PausedComposition setPausableContent(kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly public androidx.compose.runtime.PausedComposition setPausableContent(kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
