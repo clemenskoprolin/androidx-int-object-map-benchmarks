@@ -21,3 +21,10 @@ internal expect val useSmallIntObjectMapStorage: Boolean
 // Only JavaScript stores this property on the map. The other targets inline null reads
 // and no-op writes, keeping their object layout and packed-metadata path unchanged.
 @PublishedApi internal expect var IntObjectMap<*>.smallMapMetadata: ByteArray?
+
+// Keep JS-only reference temporaries out of the other platforms' inline callers.
+@PublishedApi
+internal expect inline fun IntObjectMap<*>.forEachJsIndex(block: (Int) -> Unit): Boolean
+
+// Returns -2 when the caller must use the packed lookup path.
+internal expect inline fun IntObjectMap<*>.findJsKeyIndex(key: Int): Int

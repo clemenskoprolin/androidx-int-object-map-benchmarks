@@ -155,19 +155,46 @@ class IntObjectMapStorageTest {
     }
 
     @Test
-    fun publicInlineIterationSupportsNonLocalReturns() {
-        val map =
-            mutableIntObjectMapOf<String?>(0, null, Int.MIN_VALUE, "min", Int.MAX_VALUE, "max")
-        fun find(key: Int): String? {
-            map.forEach { k, v -> if (k == key) return v }
-            return "absent"
+    fun packedStorageIterationSkipsDeletedAndEmptySlots() {
+        for (initialCapacity in listOf(113, 256, 1024)) {
+            val actual = MutableIntObjectMap<String?>(initialCapacity)
+            val expected = mutableMapOf<Int, String?>()
+            for (key in -initialCapacity..initialCapacity step 3) {
+                val value = if (key % 2 == 0) null else "v$key"
+                actual[key] = value
+                expected[key] = value
+            }
+            assertContents(expected, actual)
+            for (key in expected.keys.filter { it % 2 == 0 }) {
+                actual.remove(key)
+                expected.remove(key)
+            }
+            assertContents(expected, actual)
+            actual.clear()
+            assertContents(emptyMap(), actual)
         }
-        assertNull(find(0))
-        assertEquals("min", find(Int.MIN_VALUE))
-        assertEquals("max", find(Int.MAX_VALUE))
-        assertEquals("absent", find(42))
-        assertFalse(map.all { key, _ -> key != 0 })
-        assertTrue(map.any { key, value -> key == 0 && value == null })
-        assertEquals(1, map.count { _, value -> value == null })
+    }
+
+    @Test
+    fun publicInlineIterationSupportsNonLocalReturns() {
+        for (initialCapacity in listOf(0, 300)) {
+            val map =
+                MutableIntObjectMap<String?>(initialCapacity).apply {
+                    this[0] = null
+                    this[Int.MIN_VALUE] = "min"
+                    this[Int.MAX_VALUE] = "max"
+                }
+            fun find(key: Int): String? {
+                map.forEach { k, v -> if (k == key) return v }
+                return "absent"
+            }
+            assertNull(find(0))
+            assertEquals("min", find(Int.MIN_VALUE))
+            assertEquals("max", find(Int.MAX_VALUE))
+            assertEquals("absent", find(42))
+            assertFalse(map.all { key, _ -> key != 0 })
+            assertTrue(map.any { key, value -> key == 0 && value == null })
+            assertEquals(1, map.count { _, value -> value == null })
+        }
     }
 }

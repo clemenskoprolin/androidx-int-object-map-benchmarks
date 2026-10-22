@@ -349,13 +349,7 @@ public sealed class IntObjectMap<V> {
      */
     @PublishedApi
     internal inline fun forEachIndexed(block: (index: Int) -> Unit) {
-        val occupied = smallMapMetadata
-        if (occupied != null) {
-            for (index in occupied.indices) {
-                if (occupied[index] != 0.toByte()) block(index)
-            }
-            return
-        }
+        if (forEachJsIndex(block)) return
         val m = metadata
         val lastIndex = m.size - 2 // We always have 0 or at least 2 entries
 
@@ -583,15 +577,8 @@ public sealed class IntObjectMap<V> {
      * -1 if the key is not present.
      */
     internal inline fun findKeyIndex(key: Int): Int {
-        if (useSmallIntObjectMapStorage && _size == 0) return -1
-        val occupied = smallMapMetadata
-        if (occupied != null) {
-            val keys = keys
-            for (index in occupied.indices) {
-                if (occupied[index] != 0.toByte() && keys[index] == key) return index
-            }
-            return -1
-        }
+        val jsIndex = findJsKeyIndex(key)
+        if (jsIndex >= -1) return jsIndex
         val hash = hash(key)
         val hash2 = h2(hash)
 

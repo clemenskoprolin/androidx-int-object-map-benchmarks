@@ -393,13 +393,7 @@ public sealed class PKeyObjectMap<V> {
     @PublishedApi
     internal inline fun forEachIndexed(block: (index: Int) -> Unit) {
     /* INT_OBJECT_MAP_ONLY_START */
-        val occupied = smallMapMetadata
-        if (occupied != null) {
-            for (index in occupied.indices) {
-                if (occupied[index] != 0.toByte()) block(index)
-            }
-            return
-        }
+        if (forEachJsIndex(block)) return
     /* INT_OBJECT_MAP_ONLY_END */
         val m = metadata
         val lastIndex = m.size - 2 // We always have 0 or at least 2 entries
@@ -671,15 +665,8 @@ public sealed class PKeyObjectMap<V> {
      */
     internal inline fun findKeyIndex(key: PKey): Int {
     /* INT_OBJECT_MAP_ONLY_START */
-        if (useSmallIntObjectMapStorage && _size == 0) return -1
-        val occupied = smallMapMetadata
-        if (occupied != null) {
-            val keys = keys
-            for (index in occupied.indices) {
-                if (occupied[index] != 0.toByte() && keys[index] == key) return index
-            }
-            return -1
-        }
+        val jsIndex = findJsKeyIndex(key)
+        if (jsIndex >= -1) return jsIndex
     /* INT_OBJECT_MAP_ONLY_END */
         val hash = hash(key)
         val hash2 = h2(hash)

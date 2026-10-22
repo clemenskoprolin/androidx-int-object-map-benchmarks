@@ -26,3 +26,37 @@ internal actual inline var IntObjectMap<*>.smallMapMetadata: ByteArray?
     set(value) {
         asDynamic().androidxCollectionSmallMapMetadata = value
     }
+
+@PublishedApi
+internal actual inline fun IntObjectMap<*>.forEachJsIndex(block: (Int) -> Unit): Boolean {
+    val occupied = smallMapMetadata
+    if (occupied != null) {
+        for (index in occupied.indices) {
+            if (occupied[index] != 0.toByte()) block(index)
+        }
+        return true
+    }
+    val m = metadata
+    // JavaScript emulates Long operations. Scan four control bytes with Int operations.
+    for (baseIndex in 0 until capacity step 4) {
+        val group = m[baseIndex ushr 3]
+        var bytes = if ((baseIndex and 4) == 0) group.toInt() else (group ushr 32).toInt()
+        if ((bytes and 0x80808080.toInt()) == 0x80808080.toInt()) continue
+        for (offset in 0..3) {
+            // The sentinel has its high bit set, so it is skipped like an empty slot.
+            if ((bytes and 0x80) == 0) block(baseIndex + offset)
+            bytes = bytes ushr 8
+        }
+    }
+    return true
+}
+
+internal actual inline fun IntObjectMap<*>.findJsKeyIndex(key: Int): Int {
+    if (size == 0) return -1
+    val occupied = smallMapMetadata ?: return -2
+    val keys = keys
+    for (index in occupied.indices) {
+        if (occupied[index] != 0.toByte() && keys[index] == key) return index
+    }
+    return -1
+}

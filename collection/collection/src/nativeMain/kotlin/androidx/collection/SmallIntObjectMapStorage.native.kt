@@ -22,3 +22,8 @@ internal actual const val useSmallIntObjectMapStorage: Boolean = false
 internal actual inline var IntObjectMap<*>.smallMapMetadata: ByteArray?
     get() = null
     set(value) {}
+
+@PublishedApi
+internal actual inline fun IntObjectMap<*>.forEachJsIndex(block: (Int) -> Unit): Boolean = false
+
+internal actual inline fun IntObjectMap<*>.findJsKeyIndex(key: Int): Int = -2

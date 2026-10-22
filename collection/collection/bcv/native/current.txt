@@ -2471,6 +2471,7 @@ final fun androidx.collection/mutableLongSetOf(kotlin/Long): androidx.collection
 final fun androidx.collection/mutableLongSetOf(kotlin/Long, kotlin/Long): androidx.collection/MutableLongSet // androidx.collection/mutableLongSetOf|mutableLongSetOf(kotlin.Long;kotlin.Long){}[0]
 final fun androidx.collection/mutableLongSetOf(kotlin/Long, kotlin/Long, kotlin/Long): androidx.collection/MutableLongSet // androidx.collection/mutableLongSetOf|mutableLongSetOf(kotlin.Long;kotlin.Long;kotlin.Long){}[0]
 final fun androidx.collection/mutableLongSetOf(kotlin/LongArray...): androidx.collection/MutableLongSet // androidx.collection/mutableLongSetOf|mutableLongSetOf(kotlin.LongArray...){}[0]
+final inline fun (androidx.collection/IntObjectMap<*>).androidx.collection/forEachJsIndex(kotlin/Function1<kotlin/Int, kotlin/Unit>): kotlin/Boolean // androidx.collection/forEachJsIndex|forEachJsIndex@androidx.collection.IntObjectMap<*>(kotlin.Function1<kotlin.Int,kotlin.Unit>){}[0]
 final inline fun (kotlin/Long).androidx.collection/lowestBitSet(): kotlin/Int // androidx.collection/lowestBitSet|lowestBitSet@kotlin.Long(){}[0]
 final inline fun (kotlin/Long).androidx.collection/maskEmptyOrDeleted(): kotlin/Long // androidx.collection/maskEmptyOrDeleted|maskEmptyOrDeleted@kotlin.Long(){}[0]
 final inline fun (kotlin/Long).androidx.collection/match(kotlin/Int): kotlin/Long // androidx.collection/match|match@kotlin.Long(kotlin.Int){}[0]

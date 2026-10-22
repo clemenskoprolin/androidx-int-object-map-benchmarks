@@ -2668,6 +2668,7 @@ package androidx.collection {
   }
 
   public final class SmallIntObjectMapStorage_jvmKt {
+    method @BytecodeOnly @kotlin.PublishedApi internal static boolean forEachJsIndex(androidx.collection.IntObjectMap<? extends java.lang.Object!>, kotlin.jvm.functions.Function1<? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly @kotlin.PublishedApi internal static inline byte[]? getSmallMapMetadata(androidx.collection.IntObjectMap<? extends java.lang.Object?>);
     method @BytecodeOnly @kotlin.PublishedApi internal static inline void setSmallMapMetadata(androidx.collection.IntObjectMap<? extends java.lang.Object?>, byte[]?);
   }
