@@ -2146,6 +2146,10 @@ final val androidx.collection/size // androidx.collection/size|@androidx.collect
 final val androidx.collection/size // androidx.collection/size|@androidx.collection.SparseArrayCompat<0:0>{0§<kotlin.Any?>}size[0]
     final inline fun <#A1: kotlin/Any?> (androidx.collection/SparseArrayCompat<#A1>).<get-size>(): kotlin/Int // androidx.collection/size.<get-size>|<get-size>@androidx.collection.SparseArrayCompat<0:0>(){0§<kotlin.Any?>}[0]
 
+final var androidx.collection/smallMapMetadata // androidx.collection/smallMapMetadata|@androidx.collection.IntObjectMap<*>{}smallMapMetadata[0]
+    final inline fun (androidx.collection/IntObjectMap<*>).<get-smallMapMetadata>(): kotlin/ByteArray? // androidx.collection/smallMapMetadata.<get-smallMapMetadata>|<get-smallMapMetadata>@androidx.collection.IntObjectMap<*>(){}[0]
+    final inline fun (androidx.collection/IntObjectMap<*>).<set-smallMapMetadata>(kotlin/ByteArray?) // androidx.collection/smallMapMetadata.<set-smallMapMetadata>|<set-smallMapMetadata>@androidx.collection.IntObjectMap<*>(kotlin.ByteArray?){}[0]
+
 final fun <#A: kotlin/Any?, #B: kotlin/Any?> (androidx.collection/ScatterMap<#A, #B>).androidx.collection/toMutableScatterMap(): androidx.collection/MutableScatterMap<#A, #B> // androidx.collection/toMutableScatterMap|toMutableScatterMap@androidx.collection.ScatterMap<0:0,0:1>(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?, #B: kotlin/Any?> (androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap(): androidx.collection/ScatterMap<#A, #B> // androidx.collection/toScatterMap|toScatterMap@androidx.collection.ScatterMap<0:0,0:1>(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?, #B: kotlin/Any?> (kotlin.collections/Map<#A, #B>).androidx.collection/toMutableScatterMap(): androidx.collection/MutableScatterMap<#A, #B> // androidx.collection/toMutableScatterMap|toMutableScatterMap@kotlin.collections.Map<0:0,0:1>(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]

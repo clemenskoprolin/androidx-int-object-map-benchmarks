@@ -19,7 +19,13 @@ do
   suffix=${suffixes[$index]}
 
   echo "generating ${primitive}ObjectMap.kt"
-  sed -e "s/PKey/${primitive}/g" -e "s/pKey/${lower}/g" -e "s/KeySuffix/${suffix}/g" ${scriptDir}/PKeyObjectMap.kt.template > ${scriptDir}/../src/commonMain/kotlin/androidx/collection/${primitive}ObjectMap.kt
+  if [ "${primitive}" = "Int" ]; then
+    intObjectMapFilter='/INT_OBJECT_MAP_ONLY_/d'
+  else
+    intObjectMapFilter='/INT_OBJECT_MAP_ONLY_START/,/INT_OBJECT_MAP_ONLY_END/d'
+  fi
+  sed -e "s/PKey/${primitive}/g" -e "s/pKey/${lower}/g" -e "s/KeySuffix/${suffix}/g" \
+    -e "${intObjectMapFilter}" ${scriptDir}/PKeyObjectMap.kt.template > ${scriptDir}/../src/commonMain/kotlin/androidx/collection/${primitive}ObjectMap.kt
   echo "generating Object${primitive}Map.kt"
   sed -e "s/PValue/${primitive}/g" -e "s/ValueSuffix/${suffix}/g" ${scriptDir}/ObjectPValueMap.kt.template > ${scriptDir}/../src/commonMain/kotlin/androidx/collection/Object${primitive}Map.kt
 

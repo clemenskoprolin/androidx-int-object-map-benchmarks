@@ -2667,6 +2667,11 @@ package androidx.collection {
     method public V valueAt(int index);
   }
 
+  public final class SmallIntObjectMapStorage_jvmKt {
+    method @BytecodeOnly @kotlin.PublishedApi internal static inline byte[]? getSmallMapMetadata(androidx.collection.IntObjectMap<? extends java.lang.Object?>);
+    method @BytecodeOnly @kotlin.PublishedApi internal static inline void setSmallMapMetadata(androidx.collection.IntObjectMap<? extends java.lang.Object?>, byte[]?);
+  }
+
   public class SparseArrayCompat<E> implements java.lang.Cloneable {
     ctor public SparseArrayCompat();
     ctor public SparseArrayCompat(optional int initialCapacity);

@@ -349,6 +349,13 @@ public sealed class IntObjectMap<V> {
      */
     @PublishedApi
     internal inline fun forEachIndexed(block: (index: Int) -> Unit) {
+        val occupied = smallMapMetadata
+        if (occupied != null) {
+            for (index in occupied.indices) {
+                if (occupied[index] != 0.toByte()) block(index)
+            }
+            return
+        }
         val m = metadata
         val lastIndex = m.size - 2 // We always have 0 or at least 2 entries
 
@@ -576,6 +583,15 @@ public sealed class IntObjectMap<V> {
      * -1 if the key is not present.
      */
     internal inline fun findKeyIndex(key: Int): Int {
+        if (useSmallIntObjectMapStorage && _size == 0) return -1
+        val occupied = smallMapMetadata
+        if (occupied != null) {
+            val keys = keys
+            for (index in occupied.indices) {
+                if (occupied[index] != 0.toByte() && keys[index] == key) return index
+            }
+            return -1
+        }
         val hash = hash(key)
         val hash2 = h2(hash)
 
@@ -656,6 +672,13 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
     }
 
     private fun initializeMetadata(capacity: Int) {
+        if (useSmallIntObjectMapStorage && capacity in 1..127) {
+            smallMapMetadata = ByteArray(capacity)
+            metadata = EmptyGroup
+            initializeGrowth()
+            return
+        }
+        smallMapMetadata = null
         metadata =
             if (capacity == 0) {
                 EmptyGroup
@@ -796,7 +819,11 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
 
         // TODO: We could just mark the entry as empty if there's a group
         //       window around this entry that was already empty
-        writeMetadata(metadata, _capacity, index, Deleted)
+        val occupied = smallMapMetadata
+        if (occupied != null) {
+            occupied[index] = 0
+            growthLimit += 1
+        } else writeMetadata(metadata, _capacity, index, Deleted)
         val oldValue = values[index]
         values[index] = null
 
@@ -807,6 +834,7 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
     /** Removes all mappings from this map. */
     public fun clear() {
         _size = 0
+        smallMapMetadata?.fill(0)
         if (metadata !== EmptyGroup) {
             metadata.fill(AllEmpty)
             writeRawMetadata(metadata, _capacity, Sentinel)
@@ -823,6 +851,25 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
      */
     @PublishedApi
     internal fun findInsertIndex(key: Int): Int {
+        val occupied = smallMapMetadata
+        if (occupied != null) {
+            var emptyIndex = -1
+            for (index in occupied.indices) {
+                if (occupied[index] != 0.toByte()) {
+                    if (keys[index] == key) return index
+                } else if (emptyIndex < 0) {
+                    emptyIndex = index
+                }
+            }
+            if (growthLimit == 0) {
+                adjustStorage()
+                return findInsertIndex(key)
+            }
+            occupied[emptyIndex] = 1
+            _size += 1
+            growthLimit -= 1
+            return emptyIndex.inv()
+        }
         val hash = hash(key)
         val hash1 = h1(hash)
         val hash2 = h2(hash)
@@ -853,6 +900,8 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
         var index = findFirstAvailableSlot(hash1)
         if (growthLimit == 0 && !isDeleted(metadata, index)) {
             adjustStorage()
+            // Growing an empty table can switch from packed to small-map metadata.
+            if (smallMapMetadata != null) return findInsertIndex(key)
             index = findFirstAvailableSlot(hash1)
         }
 
@@ -907,6 +956,10 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
      * detailed in the implementation of abseil's `raw_hash_set`.
      */
     internal fun adjustStorage() { // Internal to prevent inlining
+        if (smallMapMetadata != null) {
+            resizeStorage(nextCapacity(_capacity))
+            return
+        }
         if (_capacity > GroupWidth && _size.toULong() * 32UL <= _capacity.toULong() * 25UL) {
             dropDeletes()
         } else {
@@ -916,6 +969,7 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
 
     // Internal to prevent inlining
     internal fun dropDeletes() {
+        if (smallMapMetadata != null) return
         val metadata = metadata
         val capacity = _capacity
         val keys = keys
@@ -1007,12 +1061,39 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
 
     // Internal to prevent inlining
     internal fun resizeStorage(newCapacity: Int) {
+        val previousOccupied = smallMapMetadata
         val previousMetadata = metadata
         val previousKeys = keys
         val previousValues = values
         val previousCapacity = _capacity
 
         initializeStorage(newCapacity)
+
+        val occupied = smallMapMetadata
+        if (previousOccupied != null || occupied != null) {
+            var writeIndex = 0
+            for (i in 0 until previousCapacity) {
+                val isOccupied =
+                    if (previousOccupied != null) previousOccupied[i] != 0.toByte()
+                    else isFull(previousMetadata, i)
+                if (isOccupied) {
+                    val previousKey = previousKeys[i]
+                    val index =
+                        if (occupied != null) {
+                            occupied[writeIndex] = 1
+                            writeIndex++
+                        } else {
+                            val hash = hash(previousKey)
+                            val slot = findFirstAvailableSlot(h1(hash))
+                            writeMetadata(metadata, _capacity, slot, h2(hash).toLong())
+                            slot
+                        }
+                    keys[index] = previousKey
+                    values[index] = previousValues[i]
+                }
+            }
+            return
+        }
 
         val newMetadata = metadata
         val newKeys = keys
